@@ -37,17 +37,21 @@ class SteamAPIManager:
         headers = {
             "User-Agent": random.choice(user_agents)
         }
-        
-        try:
-            # Random delay
-            delay = random.uniform(1, 2)
-            time.sleep(delay)
-            
-            response = requests.get(url=url, params=params, headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            raise f"Failed to fetch data from Steam API: {e}"
+
+        max_retries = 5
+        for attempt in range(1, max_retries + 1):
+            try:
+                time.sleep(random.uniform(1, 2))
+                response = requests.get(url=url, params=params, headers=headers)
+                response.raise_for_status()
+                return response.json()
+            except requests.exceptions.RequestException as e:
+                print(f"[Attempt {attempt}] Request failed: {e}")
+                if attempt == max_retries:
+                    raise RuntimeError(f"Failed to fetch data from Steam API after {max_retries} attempts: {e}")
+                backoff = 2 ** attempt
+                print(f"Retrying in {backoff}s...")
+                time.sleep(backoff)
     
     def get_app_names(self) -> dict:
         """Get app names from Steam API"""
