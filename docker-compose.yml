@@ -1,0 +1,63 @@
+name: steam-analysis
+
+# Services
+services:
+
+  # ------------------------------
+  # Bronze layer
+  # ------------------------------
+  mongo:
+    image: mongodb/mongodb-community-server:7.0.6-ubuntu2204
+    container_name: steam_mongo
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_INITDB_ROOT_PASSWORD}
+    volumes:
+      - mongo_db_volume:/data/db
+      - mongo_config_volume:/data/configdb
+    restart: always
+    networks:
+      - steam_analysis_network
+
+  # ------------------------------
+  # Silver layer
+  # ------------------------------
+  postgres:
+    image: postgres:17.5
+    container_name: steam_postgres
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_DB: ${DB_NAME} 
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_db_volume:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - steam_analysis_network
+
+  # ------------------------------
+  # Dash App
+  # ------------------------------
+
+  # ------------------------------
+  # Orchestration (Airflow)
+  # ------------------------------
+
+
+# Volumes
+volumes:
+  mongo_db_volume:
+    name: steam_mongo_data
+  mongo_config_volume:
+    name: steam_mongo_config
+  postgres_db_volume:
+    name: steam_postgres_data
+
+# Networks
+networks:
+  steam_analysis_network:
+    name: steam-analysis
