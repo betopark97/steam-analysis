@@ -1,5 +1,7 @@
 # Personal
 database/backups
+database/dbeaver/*
+!database/dbeaver/Scripts/
 
 # General
 .DS_Store
