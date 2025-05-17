@@ -1,7 +1,12 @@
-# Personal
+# Personal: Database
 database/backups
 database/dbeaver/*
 !database/dbeaver/Scripts/
+# Personal: DBT 
+profiles.yml
+target/
+dbt_packages/
+logs/
 
 # General
 .DS_Store
