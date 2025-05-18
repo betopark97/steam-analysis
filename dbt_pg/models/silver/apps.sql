@@ -12,7 +12,7 @@ with base as (
         enrich_is_windows, is_windows, windows_requirements_minimum, windows_requirements_recommended,
         enrich_is_mac, is_mac, mac_requirements_minimum, mac_requirements_recommended,
         enrich_is_linux, is_linux, linux_requirements_minimum, linux_requirements_recommended
-    from bronze.details
+    from {{ ref('details') }}
 )
 
 select * from base
