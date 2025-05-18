@@ -1,7 +1,7 @@
 with exploded as (
     select
         unnest(genres) as genre
-    from bronze.details
+    from {{ ref('details') }}
 )
 , distinct_genres as (
     select

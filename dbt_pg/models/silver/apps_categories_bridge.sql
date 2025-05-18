@@ -2,7 +2,7 @@ with base as (
     select
         appid
         ,unnest(categories) as category
-    from bronze.details
+    from {{ ref('details') }}
 )
 ,joined as (
     select

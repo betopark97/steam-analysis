@@ -1,7 +1,7 @@
 with exploded as (
     select
         unnest(categories) as category
-    from bronze.details
+    from {{ ref('details') }}
 )
 , distinct_categories as (
     select

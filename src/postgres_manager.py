@@ -98,7 +98,7 @@ class PostgresManager:
             
             # Perform UPSERT from temp table to main table
             cur.execute("""
-                INSERT INTO bronze.details (
+                INSERT INTO staging.details (
                     appid, name, game_appid, 
                     enrich_is_description, long_description, short_description, 
                     image_header, image_background, image_screenshots, image_movies, 

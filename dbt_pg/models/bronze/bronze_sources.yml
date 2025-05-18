@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: mongodb_polars
+    schema: staging
+    tables:
+      - name: details
+        # columns:
+        #   - name: appid
+      - name: tags
+        # columns:
+        #   - name: appid
+      - name: reviews
+        # columns:
+        #   - name: appid
