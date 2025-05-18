@@ -1,0 +1,38 @@
+[project]
+name = "steam-analysis"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiohttp>=3.11.16",
+    "dash>=2.18.2",
+    "duckdb-engine>=0.17.0",
+    "duckdb>=1.2.2",
+    "flatten-json>=0.1.14",
+    "ipykernel>=6.29.5",
+    "ipython>=9.0.0",
+    "ipywidgets>=8.1.5",
+    "jupysql>=0.11.1",
+    "matplotlib>=3.10.1",
+    "missingno>=0.5.2",
+    "polars>=1.23.0",
+    "psycopg2-binary>=2.9.10",
+    "pyarrow>=19.0.1",
+    "pydantic>=2.10.6",
+    "pymongo>=4.11.3",
+    "python-dotenv>=1.0.1",
+    "requests>=2.32.3",
+    "seaborn>=0.13.2",
+    "tqdm>=4.67.1",
+    "toml>=0.10.2",
+    "beautifulsoup4>=4.13.3",
+    "langchain-core>=0.3.60",
+    "langgraph>=0.4.5",
+    "langsmith>=0.3.42",
+    "pandas==2.1.4",
+    "numpy==1.26.4",
+    "pandera>=0.24.0",
+    "dbt-core>=1.9.4",
+    "dbt-postgres>=1.9.0",
+]
