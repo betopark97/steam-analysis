@@ -7,6 +7,8 @@ profiles.yml
 target/
 dbt_packages/
 logs/
+# Personal: dlt
+.dlt
 
 # General
 .DS_Store
