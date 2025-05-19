@@ -43,3 +43,7 @@ models:
     # gold:
     #   +materialized: table
     #   +schema: gold
+
+    ai:
+      +materialized: table
+      +schema: ai
