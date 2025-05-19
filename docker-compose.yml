@@ -25,7 +25,9 @@ services:
   # Silver layer
   # ------------------------------
   postgres:
-    image: postgres:17.5
+    build:
+      context: ./docker/postgres_pgvector
+    image: postgres_pgvector:17.5
     container_name: steam_postgres
     environment:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
