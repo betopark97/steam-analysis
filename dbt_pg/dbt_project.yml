@@ -44,6 +44,6 @@ models:
     #   +materialized: table
     #   +schema: gold
 
-    ai:
+    vector_store:
       +materialized: table
-      +schema: ai
+      +schema: vector_store
