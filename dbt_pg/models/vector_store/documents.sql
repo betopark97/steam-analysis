@@ -8,7 +8,7 @@ with base as (
         '<genres> ' || array_to_string(categories, ', ') || '</genres>' || E'\n' ||
         '<supported_languages> ' || supported_languages || '</supported_languages>' || E'\n' ||
         '<required_age> ' || required_age || '</required_age>' AS document
-        ,json_build_object(
+        ,jsonb_build_object(
             'appid', appid,
             'name', name,
             'short_description', short_description,
@@ -22,12 +22,11 @@ with base as (
     from {{ ref('details') }}
     where type = 'game'
 )
-,metadata as (
+,hashed_documents as (
     select
-        *
-        ,encode(digest(document, 'sha256'), 'hex') AS document_hash
-        ,now() as updated_at 
+        document,
+        metadata || jsonb_build_object('document_hash', encode(digest(document, 'sha256'), 'hex')) AS metadata
     from base
 )
 
-select * from metadata
+select * from hashed_documents
