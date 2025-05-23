@@ -153,7 +153,8 @@ class PostgresManager:
                     enrich_is_linux = EXCLUDED.enrich_is_linux,
                     is_linux = EXCLUDED.is_linux,
                     linux_requirements_minimum = EXCLUDED.linux_requirements_minimum,
-                    linux_requirements_recommended = EXCLUDED.linux_requirements_recommended
+                    linux_requirements_recommended = EXCLUDED.linux_requirements_recommended,
+                    updated_at = NOW()
                 ;
             """)
             
