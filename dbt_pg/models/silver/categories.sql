@@ -1,15 +1,14 @@
 with exploded as (
     select
+        distinct
         unnest(categories) as category
     from {{ ref('details') }}
 )
-, distinct_categories as (
+,numbered as (
     select
-        distinct category
+        row_number() over (order by category) as id
+        ,category as name
     from exploded
 )
 
-select
-    row_number() over (order by category) as id
-    ,category as name
-from distinct_categories
+select * from numbered

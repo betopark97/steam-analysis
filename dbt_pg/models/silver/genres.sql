@@ -1,15 +1,14 @@
 with exploded as (
     select
+        distinct
         unnest(genres) as genre
     from {{ ref('details') }}
 )
-, distinct_genres as (
+,numbered as (
     select
-        distinct genre
+        row_number() over (order by genre) as id
+        ,genre as name
     from exploded
 )
 
-select
-    row_number() over (order by genre) as id
-    ,genre as name
-from distinct_genres
+select * from numbered
