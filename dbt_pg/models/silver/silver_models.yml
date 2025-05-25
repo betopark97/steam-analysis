@@ -1,0 +1,40 @@
+version: 2
+
+models:
+  - name: apps
+    description: "Fairly cleaned data from MongoDB"
+    columns:
+      - name: appid
+        description: "App ID"
+        tests:
+          - not_null
+          - unique
+      - name: name
+  - name: screenshots
+    description: "Game screenshots"
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - appid
+            - screenshot_id
+    columns:
+      - name: appid
+        description: "App ID"
+        tests:
+          - not_null
+      - name: screenshot_id
+        description: "Screenshot ID"
+        tests:
+          - unique
+          - not_null
+      - name: path
+        description: "Screenshot URL path"
+        tests:
+          - not_null
+  - name: movies
+  - name: categories
+  - name: genres
+  - name: developers
+  - name: apps_categories_bridge
+  - name: apps_developers_bridge
+  - name: apps_genres_bridge
