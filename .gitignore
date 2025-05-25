@@ -4,6 +4,8 @@ database/dbeaver/*
 !database/dbeaver/Scripts/
 # Personal: DBT 
 profiles.yml
+.user.yml
+package-lock.yml
 target/
 dbt_packages/
 logs/
