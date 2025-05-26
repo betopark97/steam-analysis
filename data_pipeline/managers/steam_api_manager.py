@@ -4,12 +4,7 @@ from pathlib import Path
 from typing import Optional
 import random
 import requests
-from dotenv import load_dotenv
 import time
-from datetime import datetime
-# from .postgres_manager import PostgresManager
-
-load_dotenv()
 
 
 class SteamAPIManager:
@@ -17,8 +12,6 @@ class SteamAPIManager:
     
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or os.getenv('STEAM_API_KEY')
-        self.output_dir = Path(__file__).cwd().parent / 'data'
-        self.output_dir.mkdir(parents=True, exist_ok=True)
         
         
     def _make_request(self, url: str, params: dict = None, return_type: str = 'json') -> dict:

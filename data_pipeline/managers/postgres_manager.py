@@ -23,7 +23,7 @@ class PostgresManager:
             'port': os.getenv('DB_PORT')
         }
 
-    def load_app_details(self, df_app_details: pl.DataFrame):
+    def upsert_app_details(self, df_app_details: pl.DataFrame):
         """Update the app details in the database with UPSERT logic"""
         conn = psycopg2.connect(**self.db_params)
         cur = conn.cursor()
@@ -169,10 +169,10 @@ class PostgresManager:
             cur.close()
             conn.close()
             
-    def load_app_tags(self, df_app_tags):
+    def upsert_app_tags(self, df_app_tags):
         pass
     
-    def load_app_reviews(self, df_app_reviews):
+    def upsert_app_reviews(self, df_app_reviews):
         pass
     
     def enrich_app_details(self, df_app_details):

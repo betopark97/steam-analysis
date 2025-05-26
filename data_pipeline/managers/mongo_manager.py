@@ -1,11 +1,7 @@
-from pymongo import MongoClient, UpdateOne, UpdateMany
-import json
+from pymongo import MongoClient, UpdateOne
 import os
-from pathlib import Path
 from dotenv import load_dotenv
-import polars as pl
-from io import StringIO
-from tqdm import tqdm
+
 
 
 class MongoManager:
@@ -20,7 +16,7 @@ class MongoManager:
         self.client = MongoClient(self.connection_string)
         self.database = self.client['steam_db']
 
-    def update_app_names(self, app_names: dict):
+    def upsert_app_names(self, app_names: dict):
         """Update the app list in the database with UPSERT logic"""
         collection = self.database['names']
         
@@ -40,7 +36,7 @@ class MongoManager:
         
         print("App names updated successfully")
             
-    def update_app_details(self, appid: int, app_details: dict):
+    def upsert_app_details(self, appid: int, app_details: dict):
         """Update a single app detail in the database with UPSERT logic"""
         collection = self.database['details']
         str_appid = str(appid)
@@ -80,7 +76,7 @@ class MongoManager:
             )
             # tqdm.write(f"[LOGGED] appid: {appid} — Missing or empty data block")
     
-    def update_app_reviews(self, appid: int, app_reviews: dict):
+    def upsert_app_reviews(self, appid: int, app_reviews: dict):
         """Update a single app review in the database with UPSERT logic"""
         collection = self.database['reviews']
         
@@ -101,7 +97,7 @@ class MongoManager:
             pass
             # tqdm.write(f"[UNCHANGED] appid: {appid} — Already up-to-date")
             
-    def update_app_tags(self, appid: int, app_tags: dict):
+    def upsert_app_tags(self, appid: int, app_tags: dict):
         """Update a single app tag in the database with UPSERT logic"""
         collection = self.database['tags']
         
