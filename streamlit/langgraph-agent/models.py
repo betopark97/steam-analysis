@@ -1,15 +1,14 @@
+import os
+from dotenv import load_dotenv
 from langchain_google_genai.chat_models import ChatGoogleGenerativeAI
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
 
-import os
-from dotenv import load_dotenv
-
-
 
 load_dotenv()
 
-class Models:
+
+class Model:
     def __init__(self):
         self.chat_model_gemini = ChatGoogleGenerativeAI(
             api_key=os.environ.get("GEMINI_API_KEY"),
