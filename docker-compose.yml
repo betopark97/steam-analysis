@@ -42,8 +42,19 @@ services:
       - steam_analysis_network
 
   # ------------------------------
-  # Dash App
+  # Streamlit App
   # ------------------------------
+  streamlit_app:
+    build:
+      context: ./streamlit
+    image: streamlit_app:0.1
+    container_name: steam_streamlit
+    ports:
+      - 8501:8501
+    restart: always
+    networks:
+      - steam_analysis_network
+
 
   # ------------------------------
   # Orchestration (Airflow)
