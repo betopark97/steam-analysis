@@ -7,7 +7,7 @@ import requests
 from dotenv import load_dotenv
 import time
 from datetime import datetime
-from .postgres_manager import PostgresManager
+# from .postgres_manager import PostgresManager
 
 load_dotenv()
 
@@ -21,7 +21,7 @@ class SteamAPIManager:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
         
-    def _make_request(self, url: str, params: dict = None) -> dict:
+    def _make_request(self, url: str, params: dict = None, return_type: str = 'json') -> dict:
         """Make a request to the Steam API"""
         user_agents = [
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -41,10 +41,13 @@ class SteamAPIManager:
         max_retries = 5
         for attempt in range(1, max_retries + 1):
             try:
-                time.sleep(random.uniform(1, 2))
+                time.sleep(random.uniform(2, 4))
                 response = requests.get(url=url, params=params, headers=headers)
                 response.raise_for_status()
-                return response.json()
+                if return_type == 'json':
+                    return response.json()
+                if return_type == 'text':
+                    return response.text  # Return raw response if not JSON
             except requests.exceptions.RequestException as e:
                 print(f"[Attempt {attempt}] Request failed: {e}")
                 if attempt == max_retries:
@@ -60,7 +63,7 @@ class SteamAPIManager:
         
         return response
     
-    def get_app_details(self, app_id: str) -> dict:
+    def get_app_details(self, app_id: int) -> dict:
         """Get game info from Steam API"""
         url = "https://store.steampowered.com/api/appdetails"
         params = {"appids": app_id}
@@ -68,7 +71,7 @@ class SteamAPIManager:
         
         return response
     
-    def get_app_tags(self, app_id: str) -> dict:
+    def get_app_tags(self, app_id: int) -> dict:
         """Get app tags from Steam Spy"""
         url = "https://steamspy.com/api.php"
         params = {"request": "appdetails", "appid": app_id}
@@ -76,9 +79,19 @@ class SteamAPIManager:
 
         return response
     
-    def get_app_reviews(self, app_id: str) -> dict:
+    def get_app_reviews(self, app_id: int) -> dict:
         """Get app reviews from Steam API"""
         url = f"https://store.steampowered.com/appreviews/{app_id}"
         response = self._make_request(url)
+        
+        return response
+    
+    # ---------------------------------------------------------------
+    # Data enrichment
+    # ---------------------------------------------------------------
+    def get_app_html(self, app_id: int) -> dict:
+        """Get app description from Steam Website"""
+        url = f"https://store.steampowered.com/app/{app_id}"
+        response = self._make_request(url, return_type='text')
         
         return response
