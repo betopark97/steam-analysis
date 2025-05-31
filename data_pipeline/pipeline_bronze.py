@@ -1,5 +1,7 @@
+from pathlib import Path
 import sys
 import logging
+from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv
 from collections import defaultdict
 from datetime import datetime
@@ -11,26 +13,37 @@ from managers.mongo_manager import AsyncMongoManager
 load_dotenv()
 
 def setup_logging():
-    # Clear existing handlers to allow reconfiguration if needed
+    # Resolve the directory of this script file
+    log_dir = Path(__file__).resolve().parent
+    log_path = log_dir / "app.log"
+    
+    # Clear existing handlers
     root_logger = logging.getLogger()
     if root_logger.hasHandlers():
         root_logger.handlers.clear()
+
+    # Set up log file rotation: max 200MB, keep 2 backup files
+    file_handler = RotatingFileHandler(
+        log_path,
+        maxBytes=200 * 1024 * 1024,  
+        backupCount=2,              
+        encoding='utf-8'
+    )
+
+    stream_handler = logging.StreamHandler(sys.stdout)
 
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
-        handlers=[
-            logging.StreamHandler(sys.stdout),  # Console output
-            logging.FileHandler("app.log"),     # Single app-wide log file (optional)
-        ],
+        handlers=[stream_handler, file_handler],
     )
 
-    # You can also set specific log levels for your modules here if needed:
+    # Module-specific log levels
     logging.getLogger("AsyncMongoManager").setLevel(logging.INFO)
     logging.getLogger("AsyncSteamAPIManager").setLevel(logging.INFO)
-    
-    # Silence noisy loggers
+
+    # Silence noisy libraries
     logging.getLogger("pymongo").setLevel(logging.WARNING)
     logging.getLogger("pymongo.topology").setLevel(logging.WARNING)
     logging.getLogger("motor").setLevel(logging.WARNING)
@@ -40,13 +53,10 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 async def fetch_and_store_app_names(api_manager, mongo_manager):
-    logger.info("Fetching app names from Steam API...")
     app_names = await api_manager.get_app_names()
     await mongo_manager.upsert_app_names(app_names)
 
 async def get_filtered_appids(mongo_manager):
-    logger.info("Filtering appids (excluding 'Playtest') and prioritizing missing data...")
-
     db = mongo_manager.database
     names_col = db['names']
     details_col = db['details']
@@ -61,8 +71,6 @@ async def get_filtered_appids(mongo_manager):
     )
     name_docs = [doc async for doc in base_cursor]
     base_appids = [doc["appid"] for doc in name_docs]
-
-    logger.info(f"Filtered {len(base_appids)} appids from 'names'")
 
     # Step 2: Existing appids from other collections
     existing_details = set([doc["appid"] async for doc in details_col.find({}, {"appid": 1})])
@@ -128,7 +136,6 @@ async def get_filtered_appids(mongo_manager):
             else:
                 break
 
-    logger.info(f"Final prioritized appids collected: {len(final_appids)}")
     return final_appids
 
 async def fetch_and_store_app_details(api_manager, mongo_manager, appid):
@@ -152,9 +159,11 @@ async def main():
 
     try:
         # 1. Fetch all the appids, names
+        logger.info("Fetching app names from Steam API...")
         await fetch_and_store_app_names(api_manager, mongo_manager)
 
         # 2. Filter for prioritized appids
+        logger.info("Filtering appids and prioritizing missing data...")
         appids = await get_filtered_appids(mongo_manager)
 
         # 3. Fetch details, tags, and reviews
