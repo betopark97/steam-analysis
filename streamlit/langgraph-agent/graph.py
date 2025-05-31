@@ -32,7 +32,7 @@ workflow.add_edge("Search Web", END)
 workflow.add_edge("Answer Question", END)
 
 
-checkpointer = InMemorySaver()  # or a RedisSaver, or SQLiteSaver, etc.
+checkpointer = InMemorySaver()
 app = workflow.compile(checkpointer=checkpointer)
 
 initial_state = {
