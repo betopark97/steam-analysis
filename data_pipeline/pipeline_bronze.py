@@ -124,18 +124,6 @@ async def get_filtered_appids(mongo_manager):
         else:
             break
 
-    # Step 6: Just fill any remaining to make up 1000
-    if len(final_appids) < 1000:
-        extras = [
-            appid for appid in base_appids
-            if appid not in set(final_appids)
-        ]
-        for appid in extras:
-            if len(final_appids) < 1000:
-                final_appids.append(appid)
-            else:
-                break
-
     return final_appids
 
 async def fetch_and_store_app_details(api_manager, mongo_manager, appid):
