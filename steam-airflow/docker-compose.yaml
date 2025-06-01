@@ -84,6 +84,9 @@ x-airflow-common:
       condition: service_healthy
     postgres:
       condition: service_healthy
+  networks:
+    - default
+    - steam_analysis_network
 
 services:
   postgres:
@@ -333,3 +336,8 @@ services:
 
 volumes:
   postgres-db-volume:
+
+networks:
+  steam_analysis_network:
+    name: steam-analysis
+    external: true
