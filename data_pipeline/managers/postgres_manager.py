@@ -1,8 +1,5 @@
-import json
 import os
-from pathlib import Path
 import psycopg2
-from dotenv import load_dotenv
 import polars as pl
 from io import StringIO
 
@@ -10,17 +7,14 @@ from io import StringIO
 class PostgresManager:
     """Handle PostgreSQL database operations"""
     
-    # Load environment variables for database connection
-    load_dotenv()
-    
     def __init__(self):
         # Connect to the database
         self.db_params = {
-            'host': os.getenv('DB_HOST'),
-            'user': os.getenv('DB_USER'),
-            'password': os.getenv('DB_PASSWORD'),
-            'database': os.getenv('DB_NAME'),
-            'port': os.getenv('DB_PORT')
+            'host': os.getenv('PGDB_HOST'),
+            'user': os.getenv('PGDB_USER'),
+            'password': os.getenv('PGDB_PASSWORD'),
+            'database': os.getenv('PGDB_NAME'),
+            'port': os.getenv('PGDB_PORT')
         }
 
     def upsert_app_details(self, df_app_details: pl.DataFrame):

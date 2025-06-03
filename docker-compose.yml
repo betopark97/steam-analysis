@@ -27,12 +27,12 @@ x-airflow-common:
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
     # Environment variables for data_pipeline
     STEAM_API_KEY: ${STEAM_API_KEY}
-    DB_HOST: ${DB_HOST}
-    DB_USER: ${DB_USER}
-    DB_PASSWORD: ${DB_PASSWORD}
-    DB_NAME: ${DB_NAME}
-    DB_PORT: ${DB_PORT}
-    MONGODB_URI: ${MONGODB_URI}
+    PGDB_HOST: ${PGDB_HOST}
+    PGDB_USER: ${PGDB_USER}
+    PGDB_PASSWORD: ${PGDB_PASSWORD}
+    PGDB_NAME: ${PGDB_NAME}
+    PGDB_PORT: ${PGDB_PORT}
+    MONGODB_CONNECTION_STRING: ${MONGODB_CONNECTION_STRING}
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
@@ -74,16 +74,16 @@ services:
   # ------------------------------
   # Silver layer
   # ------------------------------
-  steam_postgres:
+  steam-postgres:
     build:
       context: .
       dockerfile: Dockerfile.postgres
     image: postgres_pgvector:17.5
     container_name: steam_postgres
     environment:
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_DB: ${DB_NAME} 
+      POSTGRES_PASSWORD: ${PGDB_PASSWORD}
+      POSTGRES_USER: ${PGDB_USER}
+      POSTGRES_DB: ${PGDB_NAME} 
     ports:
       - 5432:5432
     volumes:
@@ -95,7 +95,7 @@ services:
   # ------------------------------
   # Streamlit App
   # ------------------------------
-  streamlit_app:
+  steam-streamlit:
     build:
       context: ./streamlit
       dockerfile: Dockerfile.streamlit
