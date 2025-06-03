@@ -11,6 +11,8 @@ dbt_packages/
 logs/
 # Personal: dlt
 .dlt
+# Personal: Airflow
+airflow.cfg
 
 # General
 .DS_Store
