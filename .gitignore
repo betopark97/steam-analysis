@@ -13,6 +13,8 @@ logs/
 .dlt
 # Personal: Airflow
 airflow.cfg
+# Personal: Ruff
+.ruff_cache/
 
 # General
 .DS_Store
