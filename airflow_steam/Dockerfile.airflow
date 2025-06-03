@@ -9,12 +9,12 @@ USER airflow
 WORKDIR /opt/airflow
 
 # Copy your custom requirements.txt into the container
-COPY requirements.txt .
+COPY ./airflow_steam/requirements.txt .
 
 # Install the Python dependencies using pip
 # --no-cache-dir saves space by not caching package wheels
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy data_pipeline/ and dbt_pg/ directories into the container
-COPY data_pipeline/ /opt/airflow/data_pipeline/
-COPY dbt_pg/ /opt/airflow/dbt_pg/
+COPY ./data_pipeline/ /opt/airflow/data_pipeline/
+COPY ./dbt_pg/ /opt/airflow/dbt_pg/
