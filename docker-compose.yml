@@ -25,6 +25,14 @@ x-airflow-common:
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
+    # Environment variables for data_pipeline
+    STEAM_API_KEY: ${STEAM_API_KEY}
+    DB_HOST: ${DB_HOST}
+    DB_USER: ${DB_USER}
+    DB_PASSWORD: ${DB_PASSWORD}
+    DB_NAME: ${DB_NAME}
+    DB_PORT: ${DB_PORT}
+    MONGODB_URI: ${MONGODB_URI}
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
@@ -106,6 +114,7 @@ services:
 
   airflow-postgres: 
     image: postgres:13
+    container_name: airflow_postgres
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
@@ -125,6 +134,7 @@ services:
 
   redis:
     image: redis:7.2-bookworm
+    container_name: airflow_redis
     expose:
       - 6379
     volumes:
@@ -141,6 +151,7 @@ services:
 
   airflow-apiserver:
     <<: *airflow-common
+    container_name: airflow_apiserver
     command: api-server
     ports:
       - "8080:8080"
@@ -158,6 +169,7 @@ services:
 
   airflow-scheduler:
     <<: *airflow-common
+    container_name: airflow_scheduler
     command: scheduler
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
@@ -173,6 +185,7 @@ services:
 
   airflow-dag-processor:
     <<: *airflow-common
+    container_name: airflow_dag_processor
     command: dag-processor
     healthcheck:
       test: ["CMD-SHELL", 'airflow jobs check --job-type DagProcessorJob --hostname "$${HOSTNAME}"']
@@ -188,6 +201,7 @@ services:
 
   airflow-worker:
     <<: *airflow-common
+    container_name: airflow_worker
     command: celery worker
     healthcheck:
       test:
@@ -210,6 +224,7 @@ services:
 
   airflow-triggerer:
     <<: *airflow-common
+    container_name: airflow_triggerer
     command: triggerer
     healthcheck:
       test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
@@ -225,6 +240,7 @@ services:
 
   airflow-init:
     <<: *airflow-common
+    container_name: airflow_init
     entrypoint: /bin/bash
     command:
       - -c
@@ -315,6 +331,7 @@ services:
 
   airflow-cli:
     <<: *airflow-common
+    container_name: airflow_cli
     profiles:
       - debug
     environment:
