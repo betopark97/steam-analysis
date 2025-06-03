@@ -2,15 +2,11 @@ from pathlib import Path
 import sys
 import logging
 from logging.handlers import RotatingFileHandler
-from dotenv import load_dotenv
 from collections import defaultdict
 from datetime import datetime
-import asyncio
-from managers.steam_api_manager import AsyncSteamAPIManager
-from managers.mongo_manager import AsyncMongoManager
+from data_pipeline.managers.steam_api_manager import SteamAPIManager
+from data_pipeline.managers.mongo_manager import MongoManager
 
-
-load_dotenv()
 
 def setup_logging():
     # Resolve the directory of this script file
@@ -40,23 +36,21 @@ def setup_logging():
     )
 
     # Module-specific log levels
-    logging.getLogger("AsyncMongoManager").setLevel(logging.INFO)
-    logging.getLogger("AsyncSteamAPIManager").setLevel(logging.INFO)
-
-    # Silence noisy libraries
-    logging.getLogger("pymongo").setLevel(logging.WARNING)
-    logging.getLogger("pymongo.topology").setLevel(logging.WARNING)
-    logging.getLogger("motor").setLevel(logging.WARNING)
-    logging.getLogger("asyncio").setLevel(logging.WARNING)
+    logging.getLogger("MongoManager").setLevel(logging.INFO)
+    logging.getLogger("SteamAPIManager").setLevel(logging.INFO)
 
 setup_logging()
 logger = logging.getLogger(__name__)
 
-async def fetch_and_store_app_names(api_manager, mongo_manager):
-    app_names = await api_manager.get_app_names()
-    await mongo_manager.upsert_app_names(app_names)
+def fetch_and_store_app_names():
+    """Fetch and store app names from Steam API."""
+    steam_api_manager = SteamAPIManager()
+    mongo_manager = MongoManager()
+    app_names = steam_api_manager.get_app_names()
+    mongo_manager.upsert_app_names(app_names)
 
-async def get_filtered_appids(mongo_manager):
+def get_filtered_appids() -> list:
+    mongo_manager = MongoManager()
     db = mongo_manager.database
     names_col = db['names']
     details_col = db['details']
@@ -69,14 +63,14 @@ async def get_filtered_appids(mongo_manager):
         {"name": {"$not": {"$regex": r"\bplaytest\b", "$options": "i"}}},
         {"appid": 1, "datetime": 1}
     )
-    name_docs = [doc async for doc in base_cursor]
+    name_docs = [doc for doc in base_cursor]
     base_appids = [doc["appid"] for doc in name_docs]
 
     # Step 2: Existing appids from other collections
-    existing_details = set([doc["appid"] async for doc in details_col.find({}, {"appid": 1})])
-    existing_no_details = set([doc["appid"] async for doc in no_details_col.find({}, {"appid": 1})])
-    existing_tags = set([doc["appid"] async for doc in tags_col.find({}, {"appid": 1})])
-    existing_reviews = set([doc["appid"] async for doc in reviews_col.find({}, {"appid": 1})])
+    existing_details = set([doc["appid"] for doc in details_col.find({}, {"appid": 1})])
+    existing_no_details = set([doc["appid"] for doc in no_details_col.find({}, {"appid": 1})])
+    existing_tags = set([doc["appid"] for doc in tags_col.find({}, {"appid": 1})])
+    existing_reviews = set([doc["appid"] for doc in reviews_col.find({}, {"appid": 1})])
 
     details_union = existing_details | existing_no_details
 
@@ -126,54 +120,35 @@ async def get_filtered_appids(mongo_manager):
 
     return final_appids
 
-async def fetch_and_store_app_details(api_manager, mongo_manager, appid):
-    details = await api_manager.get_app_details(appid)
-    await mongo_manager.upsert_app_details(appid, details)
+def fetch_and_store_app_details(steam_api_manager: SteamAPIManager, mongo_manager: MongoManager, appids: list):
+    """Fetch and store app details for a given appid."""
+    logger.info(f"Starting to fetch details for {len(appids)} appids...")
+    if not isinstance(appids, list):
+        logger.error(f"Expected a list of appids, got {type(appids)}: {appids}")
+        raise ValueError("Expected a list of appids.")
 
-async def fetch_and_store_tags_reviews(api_manager, mongo_manager, appid):
-    tags_task = api_manager.get_app_tags(appid)
-    reviews_task = api_manager.get_app_reviews(appid)
+    for appid in appids:
+        details = steam_api_manager.get_app_details(appid)
+        mongo_manager.upsert_app_details(appid, details)
 
-    tags, reviews = await asyncio.gather(tags_task, reviews_task)
+def fetch_and_store_app_tags(steam_api_manager: SteamAPIManager, mongo_manager: MongoManager, appids: list):
+    """Fetch and store app tags for a given appid."""
+    logger.info(f"Starting to fetch tags for {len(appids)} appids...")
+    if not isinstance(appids, list):
+        logger.error(f"Expected a list of appids, got {type(appids)}: {appids}")
+        raise ValueError("Expected a list of appids.")
 
-    await asyncio.gather(
-        mongo_manager.upsert_app_tags(appid, tags),
+    for appid in appids:
+        tags = steam_api_manager.get_app_tags(appid)
+        mongo_manager.upsert_app_tags(appid, tags)
+
+def fetch_and_store_app_reviews(steam_api_manager: SteamAPIManager, mongo_manager: MongoManager, appids: list):
+    """Fetch and store app reviews for a given appid."""
+    logger.info(f"Starting to fetch reviews for {len(appids)} appids...")
+    if not isinstance(appids, list):
+        logger.error(f"Expected a list of appids, got {type(appids)}: {appids}")
+        raise ValueError("Expected a list of appids.")
+
+    for appid in appids:
+        reviews = steam_api_manager.get_app_reviews(appid)
         mongo_manager.upsert_app_reviews(appid, reviews)
-    )
-
-async def main():
-    api_manager = AsyncSteamAPIManager()
-    mongo_manager = AsyncMongoManager()
-
-    try:
-        # 1. Fetch all the appids, names
-        logger.info("Fetching app names from Steam API...")
-        await fetch_and_store_app_names(api_manager, mongo_manager)
-
-        # 2. Filter for prioritized appids
-        logger.info("Filtering appids and prioritizing missing data...")
-        appids = await get_filtered_appids(mongo_manager)
-
-        # 3. Fetch details, tags, and reviews
-        logger.info("Starting detail, tag, and review processing...")
-        for idx, appid in enumerate(appids, start=1):
-            try:
-                logger.info(f"[{idx}/{len(appids)}] Processing AppID: {appid}")
-
-                # Step 1: Get and store app details
-                await fetch_and_store_app_details(api_manager, mongo_manager, appid)
-
-                # Step 2: Get and store tags/reviews concurrently
-                await fetch_and_store_tags_reviews(api_manager, mongo_manager, appid)
-
-            except Exception as e:
-                logger.error(f"[ERROR] AppID {appid} failed with exception: {e}", exc_info=True)
-
-        logger.info("All appids processed.")
-
-    except Exception as e:
-        logger.critical(f"Unhandled exception in main(): {e}", exc_info=True)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

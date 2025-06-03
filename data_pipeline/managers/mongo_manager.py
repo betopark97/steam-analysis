@@ -1,22 +1,21 @@
 import os
 import logging
-from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo import UpdateOne
+from pymongo import MongoClient, UpdateOne
 from datetime import datetime
 
 
-logger = logging.getLogger("AsyncMongoManager")
+logger = logging.getLogger("MongoManager")
 
-class AsyncMongoManager:
-    """Handle MongoDB operations asynchronously using Motor"""
-
+class MongoManager:
+    """Handle MongoDB operations"""
+    
     def __init__(self):
-        self.connection_string = os.getenv('MONGODB_URI')
-        self.client = AsyncIOMotorClient(self.connection_string)
+        self.connection_string = os.getenv('MONGODB_CONNECTION_STRING')
+        self.client = MongoClient(self.connection_string)
         self.database = self.client['steam_db']
 
-    async def upsert_app_names(self, app_names: dict):
-        """Async upsert of app names into 'names' collection"""
+    def upsert_app_names(self, app_names: dict):
+        """Upsert of app names into 'names' collection"""
         collection = self.database['names']
         operations = [
             UpdateOne(
@@ -32,7 +31,7 @@ class AsyncMongoManager:
             for app in app_names['applist']['apps']
         ]
         if operations:
-            result = await collection.bulk_write(operations)
+            result = collection.bulk_write(operations)
             logger.info(
                 f"Upserted app names - Total: {len(operations)}, "
                 f"Unchanged: {result.matched_count}, "
@@ -41,14 +40,14 @@ class AsyncMongoManager:
             )
         else:
             logger.warning("No app names to upsert")
-            
-    async def upsert_app_details(self, appid: int, app_details: dict):
-        """Async upsert of app details into 'details' or 'no_details'"""
+
+    def upsert_app_details(self, appid: int, app_details: dict):
+        """Upsert of app details into 'details' or 'no_details'"""
         collection = self.database['details']
         str_appid = str(appid)
 
         if str_appid in app_details and 'data' in app_details[str_appid] and app_details[str_appid]['data']:
-            result = await collection.update_one(
+            result = collection.update_one(
                 {'appid': appid},
                 {'$set': app_details[str_appid]['data']},
                 upsert=True
@@ -62,7 +61,7 @@ class AsyncMongoManager:
         else:
             # Log missing details
             no_details_col = self.database['no_details']
-            result = await no_details_col.update_one(
+            result = no_details_col.update_one(
                 {'appid': appid},
                 {
                     '$setOnInsert': {'appid': appid},
@@ -71,11 +70,11 @@ class AsyncMongoManager:
                 upsert=True
             )
             logger.warning(f"[NO DETAILS] AppID {appid} — Missing or invalid data")
-            
-    async def upsert_app_tags(self, appid: int, app_tags: dict):
-        """Async upsert of app tags into 'tags' collection"""
+
+    def upsert_app_tags(self, appid: int, app_tags: dict):
+        """Upsert of app tags into 'tags' collection"""
         collection = self.database['tags']
-        result = await collection.update_one(
+        result = collection.update_one(
             {'appid': appid},
             {'$set': app_tags},
             upsert=True
@@ -86,11 +85,11 @@ class AsyncMongoManager:
             logger.info(f"[UPDATED] Tags for AppID {appid}")
         else:
             logger.info(f"[UNCHANGED] Tags for AppID {appid}")
-    
-    async def upsert_app_reviews(self, appid: int, app_reviews: dict):
-        """Async upsert of app reviews into 'reviews' collection"""
+
+    def upsert_app_reviews(self, appid: int, app_reviews: dict):
+        """Upsert of app reviews into 'reviews' collection"""
         collection = self.database['reviews']
-        result = await collection.update_one(
+        result = collection.update_one(
             {'appid': appid},
             {'$set': app_reviews},
             upsert=True
