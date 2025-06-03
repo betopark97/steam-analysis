@@ -1,0 +1,14 @@
+flatten-json>=0.1.14
+polars>=1.23.0
+psycopg2-binary>=2.9.10
+pymongo>=4.11.3
+python-dotenv>=1.0.1
+requests>=2.32.3
+beautifulsoup4>=4.13.3
+pandas==2.1.4
+numpy==1.26.4
+pandera>=0.24.0
+dbt-core>=1.9.4
+dbt-postgres>=1.9.0
+psycopg>=3.2.9
+more-itertools>=10.7.0

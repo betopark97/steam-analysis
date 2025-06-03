@@ -8,7 +8,7 @@ x-airflow-common:
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
   # image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:3.0.1}
   build:
-    context: ./steam-airflow
+    context: ./airflow_steam
     dockerfile: Dockerfile.airflow
   image: airflow_python:3.12
   environment:
@@ -30,6 +30,8 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+    - ./data_pipeline:/opt/airflow/data_pipeline
+    - ./dbt_pg:/opt/airflow/dbt_pg
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
