@@ -8,6 +8,9 @@ USER airflow
 # Set the working directory inside the container
 WORKDIR /opt/airflow
 
+# Set the PYTHONPATH to include the Airflow directory
+ENV PYTHONPATH="/opt/airflow:${PYTHONPATH}"
+
 # Copy your custom requirements.txt into the container
 COPY ./airflow_steam/requirements.txt .
 
