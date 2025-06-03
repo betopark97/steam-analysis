@@ -127,6 +127,8 @@ services:
     image: redis:7.2-bookworm
     expose:
       - 6379
+    volumes:
+      - redis_db_volume_airflow:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -335,6 +337,8 @@ volumes:
     name: steam_postgres_data
   postgres_db_volume_airflow:
     name: steam_postgres_airflow
+  redis_db_volume_airflow:
+    name: steam_redis_airflow
 
 # Networks
 networks:
