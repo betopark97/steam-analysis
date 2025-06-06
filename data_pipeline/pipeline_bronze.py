@@ -140,6 +140,9 @@ def fetch_and_store_app_tags(steam_api_manager: SteamAPIManager, mongo_manager: 
 
     for appid in appids:
         tags = steam_api_manager.get_app_tags(appid)
+        if tags is None:
+            logger.warning(f"JSONDecodeError fetching tags for appid {appid}. Skipping this appid.")
+            continue
         mongo_manager.upsert_app_tags(appid, tags)
 
 def fetch_and_store_app_reviews(steam_api_manager: SteamAPIManager, mongo_manager: MongoManager, appids: list):

@@ -4,6 +4,7 @@ import random
 import logging
 import requests
 import time
+from json.decoder import JSONDecodeError
 
 
 logger = logging.getLogger("SteamAPIManager")
@@ -35,8 +36,12 @@ class SteamAPIManager:
                 response = requests.get(url, params=params, headers=headers, timeout=10)
 
                 if response.status_code == 200:
-                    time.sleep(3)
-                    return response.json() if return_type == 'json' else response.text
+                    try:
+                        time.sleep(3)
+                        return response.json() if return_type == 'json' else response.text
+                    except JSONDecodeError as e:
+                        logger.warning(f"JSONDecodeError for URL {url}: {e}")
+                        return None
 
                 if response.status_code in {429} or 500 <= response.status_code < 600:
                     time.sleep(30)
