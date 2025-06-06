@@ -69,7 +69,12 @@ class MongoManager:
                 },
                 upsert=True
             )
-            logger.warning(f"[NO DETAILS] AppID {appid} — Missing or invalid data")
+            if result.upserted_id:
+                logger.info(f"[INSERTED] No Details for AppID {appid}")
+            elif result.modified_count > 0:
+                logger.info(f"[UPDATED] No Details for AppID {appid}")
+            else:
+                logger.info(f"[UNCHANGED] No Details for AppID {appid}")
 
     def upsert_app_tags(self, appid: int, app_tags: dict):
         """Upsert of app tags into 'tags' collection"""
