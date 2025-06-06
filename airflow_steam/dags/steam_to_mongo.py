@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 default_args = {
     'owner': 'airflow',
     'start_date': datetime(2025, 6, 3),
-    'retries': 1,
+    'retries': 3,
     'retry_delay': timedelta(seconds=30),
 }
 
@@ -25,6 +25,8 @@ mongo_manager = MongoManager()
 with DAG(
     dag_id='steam_to_mongo',
     default_args=default_args,
+    description='Fetch Steam data and store it in MongoDB',
+    schedule="0 */2 * * *",
     catchup=False,
 ) as dag:
 
