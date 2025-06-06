@@ -9,6 +9,7 @@ from data_pipeline.managers.steam_api_manager import SteamAPIManager
 from data_pipeline.managers.mongo_manager import MongoManager
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.operators.latest_only import LatestOnlyOperator
 from datetime import datetime, timedelta
 
 
@@ -30,35 +31,60 @@ with DAG(
     catchup=False,
 ) as dag:
 
+    latest_only = LatestOnlyOperator(task_id='latest_only')
+
     fetch_app_names = PythonOperator(
         task_id='fetch_app_names',
         python_callable=fetch_and_store_app_names,
-        op_kwargs={'steam_api_manager': steam_api_manager, 'mongo_manager': mongo_manager}
+        op_kwargs={
+            'steam_api_manager': steam_api_manager, 
+            'mongo_manager': mongo_manager
+        }
     )
 
     filtered_appids = PythonOperator(
         task_id='filtered_appids',
         python_callable=get_filtered_appids,
-        op_kwargs={'steam_api_manager': steam_api_manager, 'mongo_manager': mongo_manager}
+        op_kwargs={
+            'steam_api_manager': steam_api_manager, 
+            'mongo_manager': mongo_manager
+        }
     )
 
     fetch_app_details = PythonOperator(
         task_id='fetch_app_details',
         python_callable=fetch_and_store_app_details,
-        op_kwargs={'steam_api_manager': steam_api_manager, 'mongo_manager': mongo_manager, 'appids': filtered_appids.output}
+        op_kwargs={
+            'steam_api_manager': steam_api_manager, 
+            'mongo_manager': mongo_manager, 
+            'appids': filtered_appids.output
+        }
     )
 
     fetch_app_tags = PythonOperator(
         task_id='fetch_app_tags',
         python_callable=fetch_and_store_app_tags,
-        op_kwargs={'steam_api_manager': steam_api_manager, 'mongo_manager': mongo_manager, 'appids': filtered_appids.output}
+        op_kwargs={
+            'steam_api_manager': steam_api_manager, 
+            'mongo_manager': mongo_manager, 
+            'appids': filtered_appids.output
+        }
     )
 
     fetch_app_reviews = PythonOperator(
         task_id='fetch_app_reviews',
         python_callable=fetch_and_store_app_reviews,
-        op_kwargs={'steam_api_manager': steam_api_manager, 'mongo_manager': mongo_manager, 'appids': filtered_appids.output}
+        op_kwargs={
+            'steam_api_manager': steam_api_manager, 
+            'mongo_manager': mongo_manager, 
+            'appids': filtered_appids.output
+        }
     )
 
     # Define the task dependencies
-    fetch_app_names >> filtered_appids >> [fetch_app_details, fetch_app_tags, fetch_app_reviews]
+    (
+        latest_only 
+        >> fetch_app_names
+        >> filtered_appids
+        >> [fetch_app_details, fetch_app_tags, fetch_app_reviews]
+    )
