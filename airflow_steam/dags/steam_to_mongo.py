@@ -18,6 +18,7 @@ default_args = {
     'start_date': datetime(2025, 6, 3),
     'retries': 3,
     'retry_delay': timedelta(seconds=30),
+    'depend_on_past': True
 }
 
 steam_api_manager = SteamAPIManager()
@@ -29,6 +30,7 @@ with DAG(
     description='Fetch Steam data and store it in MongoDB',
     schedule="0 */2 * * *",
     catchup=False,
+    max_active_runs=1,
 ) as dag:
 
     latest_only = LatestOnlyOperator(task_id='latest_only')
