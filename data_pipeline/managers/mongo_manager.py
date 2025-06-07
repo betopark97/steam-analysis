@@ -9,8 +9,8 @@ logger = logging.getLogger("MongoManager")
 class MongoManager:
     """Handle MongoDB operations"""
     
-    def __init__(self):
-        self.connection_string = os.getenv('MONGODB_CONNECTION_STRING')
+    def __init__(self, connection_string=os.getenv('MONGODB_CONNECTION_STRING')):
+        self.connection_string = connection_string
         self.client = MongoClient(self.connection_string)
         self.database = self.client['steam_db']
 
