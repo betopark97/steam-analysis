@@ -1,6 +1,3 @@
-from airflow import DAG
-from airflow.operators.python import PythonOperator
-from plugins.utils.utils_dags import skip_if_not_latest_run
 from data_pipeline.pipeline_bronze import (
     fetch_and_store_app_names,
     get_filtered_appids,
@@ -10,6 +7,9 @@ from data_pipeline.pipeline_bronze import (
 )
 from data_pipeline.managers.steam_api_manager import SteamAPIManager
 from data_pipeline.managers.mongo_manager import MongoManager
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from airflow.operators.latest_only import LatestOnlyOperator
 from datetime import datetime, timedelta
 
 
@@ -18,7 +18,6 @@ default_args = {
     'start_date': datetime(2025, 6, 3),
     'retries': 3,
     'retry_delay': timedelta(seconds=30),
-    'depends_on_past': True,
 }
 
 steam_api_manager = SteamAPIManager()
@@ -30,13 +29,9 @@ with DAG(
     description='Fetch Steam data and store it in MongoDB',
     schedule="0 */2 * * *",
     catchup=False,
-    max_active_runs=1,
 ) as dag:
 
-    run_latest_only = PythonOperator(
-        task_id='run_latest_only',
-        python_callable=skip_if_not_latest_run
-    )
+    latest_only = LatestOnlyOperator(task_id='latest_only')
 
     fetch_app_names = PythonOperator(
         task_id='fetch_app_names',
@@ -88,7 +83,7 @@ with DAG(
 
     # Define the task dependencies
     (
-        run_latest_only 
+        latest_only 
         >> fetch_app_names
         >> filtered_appids
         >> [fetch_app_details, fetch_app_tags, fetch_app_reviews]
