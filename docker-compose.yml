@@ -25,7 +25,10 @@ x-airflow-common:
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
+    # Custom environment variables
     AIRFLOW__CORE__DEFAULT_TIMEZONE: Asia/Seoul
+    LANG: C.UTF-8
+    LC_ALL: C.UTF-8
     # Environment variables for data_pipeline
     STEAM_API_KEY: ${STEAM_API_KEY}
     PGDB_HOST: ${PGDB_HOST}
