@@ -30,7 +30,7 @@ for handler in logging.getLogger().handlers:
 default_args = {
     'owner': 'airflow',
     'start_date': datetime(2025, 6, 8),
-    'retries': 0,
+    'retries': 3,
     'retry_delay': timedelta(seconds=30),
     'depend_on_past': True
 }
