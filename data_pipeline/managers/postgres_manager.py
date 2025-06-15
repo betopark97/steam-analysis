@@ -1,7 +1,6 @@
 import os
 import psycopg2
 import polars as pl
-from io import StringIO
 
 
 class PostgresManager:
@@ -18,99 +17,44 @@ class PostgresManager:
         }
 
     def upsert_app_details(self, df_app_details: pl.DataFrame):
-        """Update the app details in the database with UPSERT logic"""
         conn = psycopg2.connect(**self.db_params)
         cur = conn.cursor()
         
         try:
-            # Create temporary table
-            cur.execute("""
-                CREATE TEMP TABLE temp_app_details (
-                    appid INTEGER PRIMARY KEY,
-                    name VARCHAR(255),
-                    game_appid INTEGER,
-                    enrich_is_description BOOLEAN,
-                    long_description TEXT,
-                    short_description TEXT,
-                    image_header TEXT,
-                    image_background TEXT,
-                    image_screenshots TEXT [],
-                    image_movies TEXT [],
-                    enrich_is_price BOOLEAN,
-                    is_free BOOLEAN,
-                    currency CHAR(3),
-                    price NUMERIC(10, 2),
-                    type app_type,
-                    categories TEXT [],
-                    genres TEXT [],
-                    supported_languages TEXT,
-                    controller_support BOOLEAN,
-                    enrich_is_date BOOLEAN,
-                    release_date DATE,
-                    required_age SMALLINT,
-                    developers TEXT [],
-                    publishers TEXT [],
-                    content_descriptors_notes TEXT,
-                    achievements JSONB,
-                    enrich_is_windows BOOLEAN,
-                    is_windows BOOLEAN,
-                    windows_requirements_minimum TEXT,
-                    windows_requirements_recommended TEXT,
-                    enrich_is_mac BOOLEAN,
-                    is_mac BOOLEAN,
-                    mac_requirements_minimum TEXT,
-                    mac_requirements_recommended TEXT,
-                    enrich_is_linux BOOLEAN,
-                    is_linux BOOLEAN,
-                    linux_requirements_minimum TEXT,
-                    linux_requirements_recommended TEXT
-                ) ON COMMIT DROP;
-            """)
-            
-            # Copy data to temp table
-            buffer = StringIO()
-            df_app_details.write_csv(buffer, include_header=False)
-            buffer.seek(0)
-            
-            cur.copy_expert(
-                """COPY temp_app_details (
-                    appid, name, game_appid, 
-                    enrich_is_description, long_description, short_description,
-                    image_header, image_background, image_screenshots, image_movies, 
-                    enrich_is_price, is_free, currency, price, 
-                    type, categories, genres, supported_languages, controller_support,
-                    enrich_is_date, release_date, 
-                    required_age, 
-                    developers, publishers, content_descriptors_notes,
-                    achievements, 
-                    enrich_is_windows, is_windows, windows_requirements_minimum, windows_requirements_recommended,
-                    enrich_is_mac, is_mac, mac_requirements_minimum, mac_requirements_recommended,
-                    enrich_is_linux, is_linux, linux_requirements_minimum, linux_requirements_recommended
-                    ) FROM STDIN WITH CSV""",
-                buffer
-            )
-            
-            # Perform UPSERT from temp table to main table
-            cur.execute("""
+            # Prepare your UPSERT query template with placeholders
+            upsert_query = """
                 INSERT INTO staging.details (
                     appid, name, game_appid, 
                     enrich_is_description, long_description, short_description, 
                     image_header, image_background, image_screenshots, image_movies, 
                     enrich_is_price, is_free, currency, price,
-                    type, categories, genres, supported_languages, controller_support, 
+                    type, categories, genres, supported_languages, is_controller_support, 
                     enrich_is_date, release_date, 
                     required_age, 
                     developers, publishers, content_descriptors_notes, 
                     achievements, 
                     enrich_is_windows, is_windows, windows_requirements_minimum, windows_requirements_recommended,
                     enrich_is_mac, is_mac, mac_requirements_minimum, mac_requirements_recommended,
-                    enrich_is_linux, is_linux, linux_requirements_minimum, linux_requirements_recommended
+                    enrich_is_linux, is_linux, linux_requirements_minimum, linux_requirements_recommended,
+                    updated_at
                 )
-                SELECT 
-                    *
-                FROM temp_app_details
-                ON CONFLICT (appid) 
-                DO UPDATE SET 
+                VALUES (
+                    %(appid)s, %(name)s, %(game_appid)s,
+                    %(enrich_is_description)s, %(long_description)s, %(short_description)s,
+                    %(image_header)s, %(image_background)s, %(image_screenshots)s, %(image_movies)s,
+                    %(enrich_is_price)s, %(is_free)s, %(currency)s, %(price)s,
+                    %(type)s, %(categories)s, %(genres)s, %(supported_languages)s, %(is_controller_support)s,
+                    %(enrich_is_date)s, %(release_date)s,
+                    %(required_age)s,
+                    %(developers)s, %(publishers)s, %(content_descriptors_notes)s,
+                    %(achievements)s,
+                    %(enrich_is_windows)s, %(is_windows)s, %(windows_requirements_minimum)s, %(windows_requirements_recommended)s,
+                    %(enrich_is_mac)s, %(is_mac)s, %(mac_requirements_minimum)s, %(mac_requirements_recommended)s,
+                    %(enrich_is_linux)s, %(is_linux)s, %(linux_requirements_minimum)s, %(linux_requirements_recommended)s,
+                    (NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')
+                )
+                ON CONFLICT (appid)
+                DO UPDATE SET
                     name = EXCLUDED.name,
                     game_appid = EXCLUDED.game_appid,
                     enrich_is_description = EXCLUDED.enrich_is_description,
@@ -128,7 +72,7 @@ class PostgresManager:
                     categories = EXCLUDED.categories,
                     genres = EXCLUDED.genres,
                     supported_languages = EXCLUDED.supported_languages,
-                    controller_support = EXCLUDED.controller_support,
+                    is_controller_support = EXCLUDED.is_controller_support,
                     enrich_is_date = EXCLUDED.enrich_is_date,
                     release_date = EXCLUDED.release_date,
                     required_age = EXCLUDED.required_age,
@@ -148,16 +92,19 @@ class PostgresManager:
                     is_linux = EXCLUDED.is_linux,
                     linux_requirements_minimum = EXCLUDED.linux_requirements_minimum,
                     linux_requirements_recommended = EXCLUDED.linux_requirements_recommended,
-                    updated_at = NOW()
-                ;
-            """)
+                    updated_at = (NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')
+            """
+            
+            # Iterate over each row of Polars DataFrame
+            for row in df_app_details.iter_rows(named=True):
+                # Note: Convert Polars-specific types to Python native if needed here
+                cur.execute(upsert_query, row)
             
             conn.commit()
-            print("App details updated successfully")
-            
+        
         except Exception as e:
             conn.rollback()
-            raise Exception(f"Error updating app details: {str(e)}")
+            raise Exception(f"Error updating app details row-by-row: {str(e)}")
         
         finally:
             cur.close()
