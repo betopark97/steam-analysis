@@ -10,6 +10,7 @@ from data_pipeline.managers.mongo_manager import MongoManager
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.operators.latest_only import LatestOnlyOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from datetime import datetime, timedelta
 
 
@@ -82,6 +83,11 @@ with DAG(
             'appids': filtered_appids.output
         }
     )
+    
+    trigger_mongo_to_postgres = TriggerDagRunOperator(
+        task_id='trigger_mongo_to_postgres',
+        trigger_dag_id='mongo_to_postgres',
+    )
 
     # Define the task dependencies
     (
@@ -89,4 +95,5 @@ with DAG(
         >> fetch_app_names
         >> filtered_appids
         >> [fetch_app_details, fetch_app_tags, fetch_app_reviews]
+        >> trigger_mongo_to_postgres
     )
