@@ -100,14 +100,9 @@ def strip_list_strings_df(df: pl.LazyFrame, cols: list) -> pl.LazyFrame:
 #--------------------------------------
 # Clean Ages
 #--------------------------------------
-def remove_plus_sign(age: str) -> str:
-    if isinstance(age, str):
-        return age.replace('+', '')
-    return age
-
 def remove_plus_sign_df(df: pl.LazyFrame, cols: list) -> pl.LazyFrame:
     return df.with_columns([
-        pl.col(col).map_elements(remove_plus_sign, return_dtype=pl.String).alias(col)
+        pl.col(col).cast(pl.String).str.replace_all(r'\+', '').alias(col)
         for col in cols
     ])
     
