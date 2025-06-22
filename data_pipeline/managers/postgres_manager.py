@@ -23,7 +23,7 @@ class PostgresManager:
         try:
             # Prepare your UPSERT query template with placeholders
             upsert_query = """
-                INSERT INTO staging.details (
+                INSERT INTO staging.app_details (
                     appid, name, game_appid, 
                     enrich_is_description, long_description, short_description, 
                     image_header, image_background, image_screenshots, image_movies, 
@@ -110,8 +110,39 @@ class PostgresManager:
             cur.close()
             conn.close()
             
-    def upsert_app_tags(self, df_app_tags):
-        pass
+    def upsert_app_tags(self, df_app_tags: pl.DataFrame):
+        conn = psycopg2.connect(**self.db_params)
+        cur = conn.cursor()
+        
+        try:
+            # Prepare your UPSERT query template with placeholders
+            upsert_query = """
+                INSERT INTO staging.app_tags (
+                    appid, tags, updated_at
+                )
+                VALUES (
+                    %(appid)s, %(tags)s, (NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')
+                )
+                ON CONFLICT (appid)
+                DO UPDATE SET
+                    tags = EXCLUDED.tags,
+                    updated_at = (NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')
+            """
+            
+            # Iterate over each row of Polars DataFrame
+            for row in df_app_tags.iter_rows(named=True):
+                # Note: Convert Polars-specific types to Python native if needed here
+                cur.execute(upsert_query, row)
+            
+            conn.commit()
+        
+        except Exception as e:
+            conn.rollback()
+            raise Exception(f"Error updating app details row-by-row: {str(e)}")
+        
+        finally:
+            cur.close()
+            conn.close()
     
     def upsert_app_reviews(self, df_app_reviews):
         pass
