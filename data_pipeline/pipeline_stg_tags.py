@@ -69,7 +69,7 @@ def get_stg_tags_filtered_ids(mongo_manager: MongoManager) -> list:
     
     cursor_tags = mongo_manager.database.tags.find(
         {"appid": {"$in": game_appids}},
-        {"_id": 0, "appid": 1, "tags": 1}
+        {"_id": 1}
     )
     list_cursor = list(cursor_tags)
 
