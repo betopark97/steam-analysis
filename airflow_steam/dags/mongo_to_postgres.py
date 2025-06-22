@@ -2,6 +2,10 @@ from data_pipeline.pipeline_stg_details import (
     get_stg_details_filtered_ids,
     process_stg_details_filtered
 )
+from data_pipeline.pipeline_stg_tags import (
+    get_stg_tags_filtered_ids,
+    process_stg_tags_filtered
+)
 from data_pipeline.managers.mongo_manager import MongoManager
 from data_pipeline.managers.postgres_manager import PostgresManager
 from airflow import DAG
@@ -67,9 +71,25 @@ with DAG(
         }
     )
 
-    # Define the task dependencies
-    (
-        latest_only
-        >> get_detail_ids
-        >> process_details
+    get_tags_ids = PythonOperator(
+        task_id='get_stg_tags_filtered_ids',
+        python_callable=get_stg_tags_filtered_ids,
+        op_kwargs={
+            'mongo_manager': mongo_manager
+        }
     )
+
+    process_tags = PythonOperator(
+        task_id='process_stg_tags_filtered',
+        python_callable=process_stg_tags_filtered,
+        op_kwargs={
+            'mongo_manager': mongo_manager,
+            'postgres_manager': postgres_manager,
+            'filtered_str_ids': get_tags_ids.output
+        }
+    )
+
+    # Define the task dependencies
+    latest_only >> [get_detail_ids, get_tags_ids]
+    get_detail_ids >> process_details
+    get_tags_ids >> process_tags
