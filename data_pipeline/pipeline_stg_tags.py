@@ -61,7 +61,7 @@ def get_stg_tags_filtered_ids(mongo_manager: MongoManager) -> list:
     """Get the list of filtered IDs for the 'details' collection in MongoDB."""
     # Fetch game appids
     cursor_details = mongo_manager.database.details.find(
-        {"type": "game"},
+        {"type": "game", "release_date.coming_soon": False},
         {"_id": 0, "appid": 1}
     )
     game_appids = [doc['appid'] for doc in cursor_details]
