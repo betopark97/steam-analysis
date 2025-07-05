@@ -13,11 +13,9 @@ x-airflow-common:
   image: airflow_python:3.12
   environment:
     &airflow-common-env
-    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow 
-    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@airflow-postgres/airflow 
-    AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
@@ -47,9 +45,7 @@ x-airflow-common:
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
-    redis:
-      condition: service_healthy
-    airflow-postgres: 
+    airflow-postgres:
       condition: service_healthy
   networks:
     - steam_analysis_network
@@ -87,7 +83,7 @@ services:
     environment:
       POSTGRES_PASSWORD: ${PGDB_PASSWORD}
       POSTGRES_USER: ${PGDB_USER}
-      POSTGRES_DB: ${PGDB_NAME} 
+      POSTGRES_DB: ${PGDB_NAME}
     ports:
       - 5432:5432
     volumes:
@@ -116,7 +112,7 @@ services:
   # Orchestration (Airflow)
   # ------------------------------
 
-  airflow-postgres: 
+  airflow-postgres:
     image: postgres:13
     container_name: airflow_postgres
     environment:
@@ -124,31 +120,14 @@ services:
       POSTGRES_PASSWORD: airflow
       POSTGRES_DB: airflow
     volumes:
-      - postgres_db_volume_airflow:/var/lib/postgresql/data 
+      - postgres_db_volume_airflow:/var/lib/postgresql/data
     ports:
-      - "5431:5432" 
+      - "5431:5432"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 10s
       retries: 5
       start_period: 5s
-    restart: always
-    networks:
-      - steam_analysis_network
-
-  redis:
-    image: redis:7.2-bookworm
-    container_name: airflow_redis
-    expose:
-      - 6379
-    volumes:
-      - redis_db_volume_airflow:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 30s
-      retries: 50
-      start_period: 30s
     restart: always
     networks:
       - steam_analysis_network
@@ -200,29 +179,6 @@ services:
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
-      airflow-init:
-        condition: service_completed_successfully
-
-  airflow-worker:
-    <<: *airflow-common
-    container_name: airflow_worker
-    command: celery worker
-    healthcheck:
-      test:
-        - "CMD-SHELL"
-        - 'celery --app airflow.providers.celery.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}" || celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-    environment:
-      <<: *airflow-common-env
-      DUMB_INIT_SETSID: "0"
-    restart: always
-    depends_on:
-      <<: *airflow-common-depends-on
-      airflow-apiserver:
-        condition: service_healthy
       airflow-init:
         condition: service_completed_successfully
 
@@ -358,8 +314,6 @@ volumes:
     name: steam_postgres_data
   postgres_db_volume_airflow:
     name: steam_postgres_airflow
-  redis_db_volume_airflow:
-    name: steam_redis_airflow
 
 # Networks
 networks:
