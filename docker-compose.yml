@@ -103,6 +103,8 @@ services:
     container_name: steam_streamlit
     ports:
       - 8501:8501
+    volumes:
+      - ./streamlit:/app
     restart: always
     networks:
       - steam_analysis_network
