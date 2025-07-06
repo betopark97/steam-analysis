@@ -25,6 +25,7 @@ x-airflow-common:
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
     # Custom environment variables
     AIRFLOW__CORE__DEFAULT_TIMEZONE: Asia/Seoul
+    TZ: Asia/Seoul
     LANG: C.UTF-8
     LC_ALL: C.UTF-8
     # Environment variables for data_pipeline
