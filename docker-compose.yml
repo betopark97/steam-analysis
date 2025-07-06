@@ -35,6 +35,8 @@ x-airflow-common:
     PGDB_NAME: ${PGDB_NAME}
     PGDB_PORT: ${PGDB_PORT}
     MONGODB_CONNECTION_STRING: ${MONGODB_CONNECTION_STRING}
+    MONGODB_INITDB_ROOT_USERNAME: ${MONGODB_INITDB_ROOT_USERNAME}
+    MONGODB_INITDB_ROOT_PASSWORD: ${MONGODB_INITDB_ROOT_PASSWORD}
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
@@ -42,6 +44,8 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - ./data_pipeline:/opt/airflow/data_pipeline
     - ./dbt_pg:/opt/airflow/dbt_pg
+    - ./database/backups:/opt/airflow/backups
+    - /var/run/docker.sock:/var/run/docker.sock
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on

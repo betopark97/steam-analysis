@@ -2,7 +2,12 @@
 # Ensure the version matches what you put in requirements.txt
 FROM apache/airflow:3.0.1-python3.12
 
-# Switch to the Airflow user
+# Switch to root to install Docker client
+USER root
+RUN apt-get update && \
+    apt-get install -y docker.io
+
+# Switch back to the Airflow user
 USER airflow
 
 # Set the working directory inside the container
