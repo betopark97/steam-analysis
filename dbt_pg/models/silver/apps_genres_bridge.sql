@@ -8,10 +8,10 @@ with base as (
     select
         distinct
         b.appid
-        ,g.id as genre_id
+        ,g.genre_id
     from base b
     join {{ ref('genres') }} g
-        on b.genre = g.name
+        on b.genre = g.genre_name
 )
 
 select * from joined

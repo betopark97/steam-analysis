@@ -6,8 +6,8 @@ with exploded as (
 )
 ,numbered as (
     select
-        row_number() over (order by genre) as id
-        ,genre as name
+        row_number() over (order by genre) as genre_id
+        ,genre as genre_name
     from exploded
 )
 

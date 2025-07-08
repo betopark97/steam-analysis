@@ -6,8 +6,8 @@ with exploded as (
 )
 ,numbered as (
     select
-        row_number() over (order by category) as id
-        ,category as name
+        row_number() over (order by category) as category_id
+        ,category as category_name
     from exploded
 )
 

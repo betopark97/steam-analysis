@@ -12,15 +12,15 @@ with exploded as (
 ,deduplicated as (
     select
         developer_normalized
-        ,min(developer) as name
+        ,min(developer) as developer_name
     from normalized
     group by developer_normalized
 )
 ,numbered as (
     select
-        row_number() over (order by developer_normalized) as id
-        ,name
+        row_number() over (order by developer_normalized) as developer_id
+        ,developer_name
     from deduplicated
 )
 
-select * from numbered
+select developer_id, developer_name from numbered

@@ -13,16 +13,16 @@ with base as (
 )
 ,developers as (
     select
-        id
-        ,lower(regexp_replace(trim(name), '\s+', '', 'g')) as developer_normalized
-        ,name
+        developer_id
+        ,lower(regexp_replace(trim(developer_name), '\s+', '', 'g')) as developer_normalized
+        ,developer_name
     from {{ ref('developers') }}
 )
 ,joined as (
     select
         distinct
         b.appid
-        ,d.id as developer_id
+        ,d.developer_id
     from normalized_base b
     join developers d
         on b.developer_normalized = d.developer_normalized

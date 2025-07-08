@@ -8,10 +8,10 @@ with base as (
     select
         distinct
         b.appid
-        ,c.id as category_id
+        ,c.category_id
     from base b
     join {{ ref('categories') }} c
-        on b.category = c.name
+        on b.category = c.category_name
 )
 
 select * from joined
