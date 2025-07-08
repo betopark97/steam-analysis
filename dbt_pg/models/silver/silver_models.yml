@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: apps
-    description: "Fairly cleaned data from MongoDB"
+    description: "Primary model for Steam applications, containing detailed information for each app."
     columns:
       - name: appid
         description: "App ID"
@@ -11,7 +11,7 @@ models:
           - unique
       - name: name
   - name: screenshots
-    description: "Game screenshots"
+    description: "Dimension table containing paths to game screenshots."
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
@@ -32,9 +32,67 @@ models:
         tests:
           - not_null
   - name: movies
+    description: "Dimension table containing paths to game movies."
   - name: categories
+    description: "Dimension table for app categories."
+    columns:
+      - name: category_id
+        description: "Unique ID for each category"
+        tests:
+          - not_null
+          - unique
+      - name: category_name
+        description: "Name of the category"
+        tests:
+          - not_null
   - name: genres
+    description: "Dimension table for app genres."
+    columns:
+      - name: genre_id
+        description: "Unique ID for each genre"
+        tests:
+          - not_null
+          - unique
+      - name: genre_name
+        description: "Name of the genre"
+        tests:
+          - not_null
   - name: developers
+    description: "Dimension table for app developers."
+    columns:
+      - name: developer_id
+        description: "Unique ID for each developer"
+        tests:
+          - not_null
+          - unique
+      - name: developer_name
+        description: "Name of the developer"
+        tests:
+          - not_null
   - name: apps_categories_bridge
+    description: "Bridge table connecting apps to their categories."
+    columns:
+      - name: appid
+        tests:
+          - not_null
+      - name: category_id
+        tests:
+          - not_null
   - name: apps_developers_bridge
+    description: "Bridge table connecting apps to their developers."
+    columns:
+      - name: appid
+        tests:
+          - not_null
+      - name: developer_id
+        tests:
+          - not_null
   - name: apps_genres_bridge
+    description: "Bridge table connecting apps to their genres."
+    columns:
+      - name: appid
+        tests:
+          - not_null
+      - name: genre_id
+        tests:
+          - not_null
