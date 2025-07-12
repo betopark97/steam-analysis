@@ -61,7 +61,7 @@ class SteamAPIManager:
                 time.sleep(backoff)
 
     # -----------------------
-    # Async API Methods
+    # API Call Methods
     # -----------------------
     def get_app_names(self):
         url = "https://api.steampowered.com/ISteamApps/GetAppList/v0002"
@@ -80,10 +80,3 @@ class SteamAPIManager:
         url = "https://steamspy.com/api.php"
         params = {"request": "appdetails", "appid": app_id}
         return self._make_request(url, params)
-
-    # ---------------------------------------------------------------
-    # Data enrichment
-    # ---------------------------------------------------------------
-    def get_app_html(self, app_id: int):
-        url = f"https://store.steampowered.com/app/{app_id}"
-        return self._make_request(url, return_type='text')
