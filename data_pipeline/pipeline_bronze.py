@@ -1,43 +1,9 @@
-from pathlib import Path
-import sys
 import logging
-from logging.handlers import RotatingFileHandler
 from collections import defaultdict
 from datetime import datetime
 from data_pipeline.managers.steam_api_manager import SteamAPIManager
 from data_pipeline.managers.mongo_manager import MongoManager
-
-
-def setup_logging():
-    # Resolve the directory of this script file
-    log_dir = Path(__file__).resolve().parent
-    log_path = log_dir / "app.log"
-    
-    # Clear existing handlers
-    root_logger = logging.getLogger()
-    if root_logger.hasHandlers():
-        root_logger.handlers.clear()
-
-    # Set up log file rotation: max 200MB, keep 2 backup files
-    file_handler = RotatingFileHandler(
-        log_path,
-        maxBytes=200 * 1024 * 1024,  
-        backupCount=2,              
-        encoding='utf-8'
-    )
-
-    stream_handler = logging.StreamHandler(sys.stdout)
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        handlers=[stream_handler, file_handler],
-    )
-
-    # Module-specific log levels
-    logging.getLogger("MongoManager").setLevel(logging.INFO)
-    logging.getLogger("SteamAPIManager").setLevel(logging.INFO)
+from data_pipeline.utils.utils_logging import setup_logging
 
 setup_logging()
 logger = logging.getLogger(__name__)
