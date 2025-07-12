@@ -31,7 +31,7 @@ with DAG(
     description='Fetch Steam data and store it in MongoDB',
     schedule="0 */2 * * *",
     catchup=False,
-    max_active_runs=1,
+    max_active_runs=3,
 ) as dag:
 
     latest_only = LatestOnlyOperator(task_id='latest_only')

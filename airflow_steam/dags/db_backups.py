@@ -26,7 +26,7 @@ with DAG(
     description='Make backups of the PostgreSQL and MongoDB databases',
     schedule="0 0 * * *",  # Daily at midnight
     catchup=False,
-    max_active_runs=1,
+    max_active_runs=3,
 ) as dag:
 
     latest_only = LatestOnlyOperator(task_id='latest_only')
