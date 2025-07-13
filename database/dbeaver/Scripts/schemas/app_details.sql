@@ -1,6 +1,6 @@
-DROP TABLE IF EXISTS bronze.details;
+DROP TABLE IF EXISTS staging.app_details;
 
-CREATE TABLE IF NOT EXISTS bronze.details (
+CREATE TABLE IF NOT EXISTS staging.app_details (
 	appid INTEGER PRIMARY KEY,
     name VARCHAR(255),
     game_appid INTEGER,
