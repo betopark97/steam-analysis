@@ -17,6 +17,8 @@ airflow.cfg
 .ruff_cache/
 # Personal: logging
 *.log*
+# Personal: Web Scraping
+*.html
 
 # General
 .DS_Store
