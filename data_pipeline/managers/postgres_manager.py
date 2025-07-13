@@ -138,14 +138,46 @@ class PostgresManager:
         
         except Exception as e:
             conn.rollback()
-            raise Exception(f"Error updating app details row-by-row: {str(e)}")
+            raise Exception(f"Error updating app tags row-by-row: {str(e)}")
         
         finally:
             cur.close()
             conn.close()
     
-    def upsert_app_reviews(self, df_app_reviews):
-        pass
+    def upsert_app_reviews(self, df_app_reviews: pl.DataFrame):
+        conn = psycopg2.connect(**self.db_params)
+        cur = conn.cursor()
+        
+        try:
+            # Prepare your UPSERT query template with placeholders
+            upsert_query = """
+                INSERT INTO staging.app_reviews (
+                    appid, html, review_score, updated_at
+                )
+                VALUES (
+                    %(appid)s, %(html)s, %(review_score)s, (NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')
+                )
+                ON CONFLICT (appid)
+                DO UPDATE SET
+                    html = EXCLUDED.html,
+                    review_score = EXCLUDED.review_score,
+                    updated_at = (NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')
+            """
+            
+            # Iterate over each row of Polars DataFrame
+            for row in df_app_reviews.iter_rows(named=True):
+                # Note: Convert Polars-specific types to Python native if needed here
+                cur.execute(upsert_query, row)
+            
+            conn.commit()
+        
+        except Exception as e:
+            conn.rollback()
+            raise Exception(f"Error updating app reviews row-by-row: {str(e)}")
+        
+        finally:
+            cur.close()
+            conn.close()
     
     def enrich_app_details(self, df_app_details):
         pass
