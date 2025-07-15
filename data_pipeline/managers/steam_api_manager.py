@@ -73,6 +73,8 @@ class SteamAPIManager:
         return self._make_request(url, params)
 
     def get_app_reviews(self, app_id: int):
+        # TODO: This endpoint provides limited reviews, consider
+        # using the pagination for the full set of reviews.
         url = f"https://store.steampowered.com/appreviews/{app_id}"
         return self._make_request(url)
 

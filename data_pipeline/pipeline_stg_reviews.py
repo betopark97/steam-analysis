@@ -1,31 +1,23 @@
 # Managers
-# from data_pipeline.managers.mongo_manager import MongoManager
-# from data_pipeline.managers.postgres_manager import PostgresManager
-# from data_pipeline.utils.utils_pipeline import (
-#     to_pg_array_str_safe,
-# )
-from managers.mongo_manager import MongoManager
-from managers.postgres_manager import PostgresManager
-from utils.utils_pipeline import (
-    convert_mixed_columns_to_string,
+from data_pipeline.managers.mongo_manager import MongoManager
+from data_pipeline.managers.postgres_manager import PostgresManager
+from data_pipeline.utils.utils_pipeline import (
     to_pg_array_str_safe,
-    remove_html_tags_df,
     normalize_strings_df,
-    strip_list_strings_df,
-    remove_plus_sign_df,
-    convert_age_to_int_df,
-    filter_age_df,
-    is_diff_texts
+    parse_steam_review_html_df,
+    parse_steam_review_score_df,
 )
+from data_pipeline.utils.utils_logging import setup_logging
+
 # Utils
 import json
 from bson import ObjectId
 from more_itertools import chunked
+
 # Data Science
 import polars as pl
 
 import logging
-from utils.utils_logging import setup_logging
 import warnings
 from bs4 import MarkupResemblesLocatorWarning
 
@@ -35,7 +27,7 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 
-def get_stg_reviews_filtered_ids(mongo_manager: MongoManager) -> list:
+def get_stg_reviews_filtered_appids(mongo_manager: MongoManager) -> list:
     """Get the list of filtered IDs for the 'reviews' collection in MongoDB."""
     # Filter documents
     query = {
@@ -47,87 +39,76 @@ def get_stg_reviews_filtered_ids(mongo_manager: MongoManager) -> list:
 
     # Read only necessary columns
     projection = {
-        '_id': 1,
+        "_id": 0,
+        'appid': 1,
     }
 
-    # Fetch documents
+    # Fetch filtered appids
     cursor = mongo_manager.database.details.find(query, projection)
-    list_cursor = list(cursor)
+    list_cursor = [document['appid'] for document in cursor]
 
-    # Print count of documents
-    print(f"Number of documents: {len(list_cursor)}")
-    return [str(document['_id']) for document in list_cursor]
+    # Fetch reviews ids for the filtered appids
+    cursor_reviews = mongo_manager.database.reviews.find(
+        {"appid": {"$in": list_cursor}},
+        {"_id": 0, "appid": 1}
+    )
+    list_cursor = [document['appid'] for document in cursor_reviews]
+    return list_cursor
 
-def process_stg_reviews_filtered(mongo_manager: MongoManager, postgres_manager: PostgresManager, filtered_str_ids: list) -> None:
+def process_stg_reviews_filtered(mongo_manager: MongoManager, postgres_manager: PostgresManager, filtered_appids: list) -> None:
     """Process the filtered reviews from MongoDB and insert into Postgres."""
-    logger.info(f"Starting processing of {len(filtered_str_ids)} filtered reviews...")
-    # Convert string IDs to ObjectId
-    filtered_ids = [ObjectId(id_str) for id_str in filtered_str_ids]
-
+    logger.info(f"Starting processing of {len(filtered_appids)} filtered reviews...")
+    
     # Define the batch size for processing
-    batch_size = 2000
+    batch_size = 1000
     logger.info(f"Processing in batches of {batch_size}...")
     # Read only necessary columns
     projection = {
-        "_id": 0, "appid": 1, "html": 1
+        "_id": 0, "appid": 1, "html": 1, "review_score": 1
     }
 
-    for batch_index, ids in enumerate(chunked(filtered_ids, batch_size), start=1):
-        logger.info(f"Processing batch {batch_index} with {len(ids)} IDs")
+    for batch_index, appids in enumerate(chunked(filtered_appids, batch_size), start=1):
+        logger.info(f"Processing batch {batch_index} with {len(appids)} appids")
         # Fetch documents
-        cursor = mongo_manager.database.tags.find({'_id': {'$in': ids}}, projection)
+        cursor = mongo_manager.database.reviews.find({'appid': {'$in': appids}}, projection)
         list_cursor = list(cursor)
-
-        for document in list_cursor:
-            if isinstance(document.get('tags'), dict):
-                document['tags'] = list(document['tags'].keys())
-
+        
         df = pl.LazyFrame(list_cursor, strict=False, infer_schema_length=len(list_cursor))
-        df_filtered = df.filter(pl.col('tags').list.len() > 0)
+        
+        df_final = (
+            df
+            .pipe(normalize_strings_df, cols=['html', 'review_score'])
+            .pipe(parse_steam_review_html_df, col='html')
+            .pipe(parse_steam_review_score_df, col='review_score')
+        )
 
-        df_dicts = df_filtered.collect().to_dicts()
+        df_dicts = df_final.collect().to_dicts()
 
         for row in df_dicts:
             for key, value in row.items():
-                if isinstance(value, list) and all(isinstance(v, str) for v in value):
-                    row[key] = to_pg_array_str_safe(value)
-                elif isinstance(value, (list, dict)):
-                    row[key] = json.dumps(value, ensure_ascii=False)
-        # logger.info("Converted DataFrame to match Postgres insertion expectations...")
+
+                # Case 1: Convert [] to None
+                if isinstance(value, list):
+                    if value == []:
+                        row[key] = None
+
+                    elif all(isinstance(v, str) for v in value):
+                        row[key] = to_pg_array_str_safe(value)
+
+                    else:
+                        row[key] = json.dumps(value, ensure_ascii=False)
+
+                # Case 2: Convert {"a": None, "b": None} to None
+                elif isinstance(value, dict):
+                    if all(v is None for v in value.values()):
+                        row[key] = None
+                    else:
+                        row[key] = json.dumps(value, ensure_ascii=False)
+        logger.info("Converted DataFrame to match Postgres insertion expectations...")
 
         # Convert back to Polars DataFrame
-        df_final_cleaned = pl.DataFrame(df_dicts, infer_schema_length=len(list_cursor))
+        df_final_cleaned = pl.DataFrame(df_dicts, strict=False, infer_schema_length=len(list_cursor))
         
         # Insert into Postgres
-        postgres_manager.upsert_app_tags(df_final_cleaned)
+        postgres_manager.upsert_app_reviews(df_final_cleaned)
         logger.info(f"Inserted {len(df_final_cleaned)} rows into Postgres successfully...")
-
-import os
-from dotenv import load_dotenv
-load_dotenv()
-mongo_manager = MongoManager(connection_string=os.getenv("MONGODB_URI"))
-postgres_manager = PostgresManager()
-postgres_manager.db_params['host'] = 'localhost'
-
-filtered_str_ids = get_stg_reviews_filtered_ids(mongo_manager)
-print(f"filtered st ids: {filtered_str_ids[:10]}")
-filtered_ids = [ObjectId(id_str) for id_str in filtered_str_ids]
-print(f"filtered ids: {filtered_ids[:10]}")
-
-
-cursor_reviews = mongo_manager.database.reviews.find(
-    {'_id': {'$in': filtered_ids}}, 
-    # {"_id": 0, "appid": 1, "html": 1}
-)
-list_cursor = list(cursor_reviews)
-print(f'list_cursor[:10]: {list_cursor[:10]}')
-# for document in list_cursor[:10]:
-#     print(f'document: {document}')
-
-
-print(list_cursor[:1000])
-
-df = pl.LazyFrame(list_cursor, strict=False, infer_schema_length=len(list_cursor))
-df.collect()
-
-
