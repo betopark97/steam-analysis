@@ -61,7 +61,7 @@ services:
   # ------------------------------
   # Bronze layer
   # ------------------------------
-  mongo:
+  steam-mongo:
     image: mongodb/mongodb-community-server:7.0.6-ubuntu2204
     container_name: steam_mongo
     ports:
