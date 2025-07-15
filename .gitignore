@@ -19,6 +19,9 @@ airflow.cfg
 *.log*
 # Personal: Web Scraping
 *.html
+# Personal: Streamlit
+.streamlit/
+secrets.toml
 
 # General
 .DS_Store
