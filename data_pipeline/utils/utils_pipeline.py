@@ -6,6 +6,7 @@ from collections import Counter
 import numpy as np
 import pandas as pd
 import polars as pl
+from datetime import datetime
 
 #--------------------------------------
 # Clean Schemas
@@ -135,3 +136,85 @@ def is_diff_texts(a: str, b: str) -> bool:
     b_lines = (b or "").splitlines()
     diff = difflib.ndiff(a_lines, b_lines)
     return bool(any(line.startswith(('- ', '+ ')) for line in diff))
+
+#--------------------------------------
+# Clean Descriptions
+#--------------------------------------
+
+def parse_steam_review_html(html: str) -> list:
+    
+    soup = BeautifulSoup(html, 'html.parser')
+    review_boxes = soup.find_all('div', class_='review_box')
+
+    review_dicts = []
+    for box in review_boxes:
+        # -- Author Information --
+        author_name = box.find('div', class_='persona_name').get_text(strip=True) if box.find('div', class_='persona_name') else None
+        author_owned_games = box.find('div', class_='num_owned_games').get_text(strip=True) if box.find('div', class_='num_owned_games') else None
+        author_reviews_posted = box.find('div', class_='num_reviews').get_text(strip=True) if box.find('div', class_='num_reviews') else None
+        author_hours_on_record = box.find('div', class_='hours').get_text(strip=True) if box.find('div', class_='hours') else None
+        # -- Post Information --
+        posted_date = box.find('div', class_='postedDate').get_text(strip=True).strip().replace('Posted:', '').replace('Direct from Steam', '') + f", {datetime.now().year}" if box.find('div', class_='postedDate') else None
+        # -- Review Content --
+        review_text = box.find('div', class_='content').get_text(separator='\n', strip=True) if box.find('div', class_='content') else None
+        # -- Vote Information --
+        votes_helpful = box.find('div', class_='vote_info').get_text(strip=True) if box.find('div', class_='vote_info') else None
+        review_dict = {
+            "author_name": author_name,
+            "owned_games": author_owned_games,
+            "reviews_posted": author_reviews_posted,
+            "hours_on_record": author_hours_on_record,
+            "posted_date": posted_date,
+            "review_text": review_text,
+            "votes_helpful": votes_helpful
+        }
+        review_dicts.append(review_dict)
+    return review_dicts
+
+def parse_steam_review_html_df(df: pl.LazyFrame, col: str) -> pl.LazyFrame:
+    review_struct = pl.Struct([
+        pl.Field("author_name", pl.String),
+        pl.Field("owned_games", pl.String),
+        pl.Field("reviews_posted", pl.String),
+        pl.Field("hours_on_record", pl.String),
+        pl.Field("posted_date", pl.String),
+        pl.Field("review_text", pl.String),
+        pl.Field("votes_helpful", pl.String),
+    ])
+
+    return df.with_columns([
+        pl.col(col)
+        .map_elements(parse_steam_review_html, return_dtype=pl.List(review_struct))
+        .alias(col)
+    ])
+
+def parse_steam_review_score(review_score: str) -> dict:
+    soup = BeautifulSoup(review_score, 'html.parser')
+    span = soup.find('span', class_='game_review_summary')
+    
+    if not span:
+        return {
+            "review_sentiment": None,
+            "review_score_text": None
+        }
+    
+    review_score_sentiment = span.get_text(strip=True) if span else None
+    review_score_text = span.get('data-tooltip-html') if span else None
+
+    review_score_dict = {
+        "review_sentiment": review_score_sentiment,
+        "review_score_text": review_score_text,
+    }
+    return review_score_dict
+
+def parse_steam_review_score_df(df: pl.LazyFrame, col: str) -> pl.LazyFrame:
+    review_struct = pl.Struct([
+        pl.Field("review_sentiment", pl.String),
+        pl.Field("review_score_text", pl.String),
+    ])
+    
+    return df.with_columns([
+        pl.col(col)
+        .map_elements(parse_steam_review_score, return_dtype=review_struct)
+        .alias(col)
+    ])
