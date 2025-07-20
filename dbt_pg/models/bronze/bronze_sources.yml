@@ -1,12 +1,13 @@
 version: 2
 
 sources:
-  - name: mongodb_polars
+  - name: staging
     schema: staging
     tables:
       - name: app_details
         columns:
           - name: appid
+            description: "App ID"
           - name: name
           - name: game_appid
       - name: app_tags

@@ -1,3 +1,3 @@
 select
     *
-from {{ source('mongodb_polars', 'app_tags')}}
+from {{ source('staging', 'app_tags')}}
