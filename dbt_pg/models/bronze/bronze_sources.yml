@@ -4,12 +4,14 @@ sources:
   - name: mongodb_polars
     schema: staging
     tables:
-      - name: details
-        # columns:
-        #   - name: appid
-      - name: tags
-        # columns:
-        #   - name: appid
-      - name: reviews
-        # columns:
-        #   - name: appid
+      - name: app_details
+        columns:
+          - name: appid
+          - name: name
+          - name: game_appid
+      - name: app_tags
+        columns:
+          - name: appid
+      - name: app_reviews
+        columns:
+          - name: appid

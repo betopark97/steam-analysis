@@ -3,7 +3,7 @@ with exploded as (
         distinct
         appid
         ,unnest(image_movies) as movie
-    from {{ ref('details') }}
+    from {{ ref('v_app_details') }}
 )
 ,numbered as (
     select

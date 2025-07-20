@@ -2,7 +2,7 @@ with base as (
     select
         appid
         ,unnest(developers) as developer
-    from {{ ref('details') }}
+    from {{ ref('v_app_details') }}
 )
 ,normalized_base as (
     select

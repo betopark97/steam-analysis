@@ -1,7 +1,15 @@
 version: 2
 
 models:
-  - name: details
-    description: "Fairly cleaned data from MongoDB"
+  - name: v_app_details
+    description: "Fairly cleaned app details data from MongoDB"
+    columns:
+      - name: appid
+  - name: v_app_tags
+    description: "Fairly cleaned app tags data from MongoDB"
+    columns:
+      - name: appid
+  - name: v_app_reviews
+    description: "Fairly cleaned app reviews data from MongoDB"
     columns:
       - name: appid

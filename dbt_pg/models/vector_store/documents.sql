@@ -19,7 +19,7 @@ with base as (
             'supported_languages', supported_languages,
             'required_age', required_age
         ) AS metadata
-    from {{ ref('details') }}
+    from {{ ref('v_app_details') }}
     where type = 'game'
 )
 ,hashed_documents as (

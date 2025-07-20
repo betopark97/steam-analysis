@@ -2,7 +2,7 @@ with base as (
     select
         appid
         ,unnest(genres) as genre
-    from {{ ref('details') }}
+    from {{ ref('v_app_details') }}
 )
 ,joined as (
     select

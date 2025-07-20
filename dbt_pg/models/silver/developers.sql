@@ -1,7 +1,7 @@
 with exploded as (
     select
         unnest(developers) as developer
-    from {{ ref('details') }}
+    from {{ ref('v_app_details') }}
 )
 ,normalized as (
     select

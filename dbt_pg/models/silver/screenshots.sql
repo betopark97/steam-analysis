@@ -3,7 +3,7 @@ with exploded as (
         distinct
         appid
         ,unnest(image_screenshots) as screenshot
-    from {{ ref('details') }}
+    from {{ ref('v_app_details') }}
 )
 ,numbered as (
     select

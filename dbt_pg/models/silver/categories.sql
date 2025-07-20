@@ -2,7 +2,7 @@ with exploded as (
     select
         distinct
         unnest(categories) as category
-    from {{ ref('details') }}
+    from {{ ref('v_app_details') }}
 )
 ,numbered as (
     select

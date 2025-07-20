@@ -2,7 +2,7 @@ with exploded as (
     select
         distinct
         unnest(genres) as genre
-    from {{ ref('details') }}
+    from {{ ref('v_app_details') }}
 )
 ,numbered as (
     select
