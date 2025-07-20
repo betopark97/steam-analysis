@@ -1,15 +1,21 @@
-Welcome to your new dbt project!
+# Personal docs for dbt project
 
-### Using the starter project
+## Models
 
-Try running the following commands:
-- dbt run
-- dbt test
+bronze: views for the staging schema that comes from MongoDB after some preprocessing
+with polars (python).
 
+silver: exploded/flattened and filtered data from bronze by semantic layers.
 
-### Resources:
-- Learn more about dbt [in the docs](https://docs.getdbt.com/docs/introduction)
-- Check out [Discourse](https://discourse.getdbt.com/) for commonly asked questions and answers
-- Join the [chat](https://community.getdbt.com/) on Slack for live discussions and support
-- Find [dbt events](https://events.getdbt.com) near you
-- Check out [the blog](https://blog.getdbt.com/) for the latest news on dbt's development and best practices
+gold: star schema modeled tables from silver table to be transferred to or
+queried via federation using DuckDB.
+
+## Running CLI
+
+`dbt deps` to install needed packages
+`dbt run` to run all queries for model creations
+`dbt test` to run all tests for models
+`dbt docs generate` to generate the documentations for dbt project
+`dbt docs serve` to serve the html of dbt project documentations (depends on `dbt docs generate`)
+    - use --port 8580 because 8080 is used by Airflow
+`dbt clean` to reset the working environment: dbt_packages/ target/ folders
